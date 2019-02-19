@@ -1,0 +1,79 @@
+---
+title: "Biological control"
+author: "Jorge Isla Escudero"
+date: "9 de diciembre de 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Data imput
+
+```{r data}
+#
+bi <-read.table("../data/bractocera_intensity.csv", header=TRUE, sep=";", dec=".",na.strings="NA",comment.char = "#")
+
+str(bi)
+
+```
+### meaning of the variables
+
+finca: finca
+habitat: PRO/IMP
+time: nº exposition days
+landscape: landscape complexity of the 'finca' 
+removal: nº of false larvas disappeared 
+rain:-
+max: 4 larve disponible, minus the larvae that could not be revised because the offer was damaged. For example, if one of the plates has disappeared and only 2/4 larvae can be checked, max = 2.
+
+### Removal distributions
+
+```{r freqdistrib, echo=T}
+
+# Compute a histogram of `removal`
+require(ggplot2)
+ggplot(data=bi, aes(removal/max)) + geom_histogram()
+
+ggplot(bi, aes(removal/max, fill = finca)) + geom_histogram(alpha = 0.5)
+ggplot(bi, aes(removal/max, fill = habitat)) + geom_histogram(alpha = 0.5)
+ggplot(bi, aes(removal/max, fill = landscape)) + geom_histogram(alpha = 0.5)
+
+```
+
+### Complete Bractocera false larves model.
+
+```{r removal, echo=T}
+
+require(lme4)
+require(car)
+
+
+model1<-glmer(removal/max ~ habitat+landscape+time+habitat*landscape+(1|finca),data=bi,family=binomial(link="logit"))
+
+Anova(model1)
+
+```
+
+## least square means 
+```{r}
+require(emmeans)
+require(blmeco)
+
+a<-lsmeans(model1, "landscape", type = "response")
+a
+
+```
+
+
+### post-hoc analysis
+```{r}
+leastsquare = lsmeans(model1, pairwise ~ landscape, adjust="tukey",type="response", alpha =0.05, Letters = letters)
+leastsquare
+
+
+```
+
